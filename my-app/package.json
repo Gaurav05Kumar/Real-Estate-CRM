@@ -1,7 +1,7 @@
 {
-  "name": "my-app",
+  "name": "real-estate-crm",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,7 +11,12 @@
   },
   "dependencies": {
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "react-router-dom": "^7.1.1",
+    "axios": "^1.7.9",
+    "recharts": "^2.15.0",
+    "lucide-react": "^0.469.0",
+    "date-fns": "^4.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
