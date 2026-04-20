@@ -2,11 +2,12 @@ import Property from '../models/Property.js';
 
 export const getAllProperties = async (req, res) => {
   try {
-    const { type, status, listingType, search, page = 1, limit = 20, minPrice, maxPrice, bedrooms, bathrooms } = req.query;
+    const { type, propertyType, status, listingType, search, page = 1, limit = 20, minPrice, maxPrice, bedrooms, bathrooms } = req.query;
     
     const query = {};
     
-    if (type) query.type = type;
+    const resolvedPropertyType = propertyType || type;
+    if (resolvedPropertyType) query.propertyType = resolvedPropertyType;
     if (status) query.status = status;
     if (listingType) query.listingType = listingType;
     if (bedrooms) query.bedrooms = { $gte: parseInt(bedrooms) };
@@ -19,7 +20,7 @@ export const getAllProperties = async (req, res) => {
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: 'i' } },
-        { address: { $regex: search, $options: 'i' } },
+        { 'location.address': { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } }
       ];
     }
@@ -64,6 +65,17 @@ export const getPropertyById = async (req, res) => {
 export const createProperty = async (req, res) => {
   try {
     const propertyData = { ...req.body };
+
+    // Parse nested fields when request is multipart/form-data
+    if (typeof propertyData.location === 'string') {
+      propertyData.location = JSON.parse(propertyData.location);
+    }
+    if (typeof propertyData.area === 'string') {
+      propertyData.area = JSON.parse(propertyData.area);
+    }
+    if (typeof propertyData.amenities === 'string') {
+      propertyData.amenities = JSON.parse(propertyData.amenities);
+    }
     
     // Handle image uploads
     if (req.files && req.files.length > 0) {
@@ -73,7 +85,7 @@ export const createProperty = async (req, res) => {
       }));
     }
 
-    propertyData.owner = req.user._id;
+    propertyData.listedBy = req.user._id;
     const property = new Property(propertyData);
     await property.save();
     res.status(201).json(property);
@@ -85,6 +97,16 @@ export const createProperty = async (req, res) => {
 export const updateProperty = async (req, res) => {
   try {
     const propertyData = { ...req.body };
+
+    if (typeof propertyData.location === 'string') {
+      propertyData.location = JSON.parse(propertyData.location);
+    }
+    if (typeof propertyData.area === 'string') {
+      propertyData.area = JSON.parse(propertyData.area);
+    }
+    if (typeof propertyData.amenities === 'string') {
+      propertyData.amenities = JSON.parse(propertyData.amenities);
+    }
     
     // Handle new image uploads
     if (req.files && req.files.length > 0) {
@@ -161,7 +183,7 @@ export const getPropertyStats = async (req, res) => {
     const typeStats = await Property.aggregate([
       {
         $group: {
-          _id: '$type',
+          _id: '$propertyType',
           count: { $sum: 1 }
         }
       }

@@ -7,6 +7,13 @@ import { format } from 'date-fns';
 
 function Deals() {
   const { API_URL } = useContext(AuthContext);
+  const formatIndianNumber = (value) => {
+    if (!value) return '';
+    return Number(value).toLocaleString('en-IN');
+  };
+
+  const getDigitsOnly = (value) => value.replace(/\D/g, '');
+
   const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('kanban');
@@ -56,7 +63,16 @@ function Deals() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API_URL}/deals`, formData);
+      const payload = {
+        ...formData,
+        dealValue: formData.dealValue ? Number(formData.dealValue) : 0,
+        commission: {
+          ...formData.commission,
+          percentage: formData.commission?.percentage ? Number(formData.commission.percentage) : 0
+        }
+      };
+
+      await axios.post(`${API_URL}/deals`, payload);
       setShowModal(false);
       setFormData({
         title: '', property: '', client: '', stage: 'inquiry',
@@ -108,7 +124,7 @@ function Deals() {
                       {deal.client?.name}
                     </p>
                     <p style={{ fontSize: '14px', fontWeight: 600, color: '#4f46e5' }}>
-                      ${deal.dealValue?.toLocaleString()}
+                      ₹{deal.dealValue?.toLocaleString('en-IN')}
                     </p>
                     {deal.assignedTo && (
                       <p style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>
@@ -187,10 +203,12 @@ function Deals() {
                 <div className="form-group">
                   <label className="form-label">Deal Value *</label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     className="form-input"
-                    value={formData.dealValue}
-                    onChange={(e) => setFormData({ ...formData, dealValue: e.target.value })}
+                    value={formatIndianNumber(formData.dealValue)}
+                    onChange={(e) => setFormData({ ...formData, dealValue: getDigitsOnly(e.target.value) })}
+                    placeholder="e.g. 25,00,000"
                     required
                   />
                 </div>

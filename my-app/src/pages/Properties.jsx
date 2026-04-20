@@ -7,6 +7,14 @@ import { format } from 'date-fns';
 
 function Properties() {
   const { API_URL } = useContext(AuthContext);
+  const API_BASE = API_URL.replace('/api', '');
+  const formatIndianNumber = (value) => {
+    if (!value) return '';
+    return Number(value).toLocaleString('en-IN');
+  };
+
+  const getDigitsOnly = (value) => value.replace(/\D/g, '');
+
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -14,6 +22,7 @@ function Properties() {
   const [listingType, setListingType] = useState('');
   const [status, setStatus] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [selectedImages, setSelectedImages] = useState([]);
   const [formData, setFormData] = useState({
     title: '', description: '', propertyType: 'residential', listingType: 'sale',
     price: '', location: { address: '', city: '', state: '', pincode: '' },
@@ -45,8 +54,31 @@ function Properties() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API_URL}/properties`, formData);
+      const payload = new FormData();
+      payload.append('title', formData.title);
+      payload.append('description', formData.description);
+      payload.append('propertyType', formData.propertyType);
+      payload.append('listingType', formData.listingType);
+      payload.append('price', formData.price ? String(Number(formData.price)) : '0');
+      payload.append('status', formData.status);
+      payload.append('bedrooms', formData.bedrooms ? String(formData.bedrooms) : '');
+      payload.append('bathrooms', formData.bathrooms ? String(formData.bathrooms) : '');
+      payload.append('location', JSON.stringify(formData.location));
+      payload.append('area', JSON.stringify({
+        value: formData.area.value ? Number(formData.area.value) : '',
+        unit: formData.area.unit
+      }));
+      payload.append('amenities', JSON.stringify(formData.amenities || []));
+
+      selectedImages.forEach((file) => {
+        payload.append('images', file);
+      });
+
+      await axios.post(`${API_URL}/properties`, payload, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       setShowModal(false);
+      setSelectedImages([]);
       setFormData({
         title: '', description: '', propertyType: 'residential', listingType: 'sale',
         price: '', location: { address: '', city: '', state: '', pincode: '' },
@@ -137,7 +169,7 @@ function Properties() {
               <div style={{ height: '180px', background: '#e2e8f0', position: 'relative' }}>
                 {property.images?.[0] ? (
                   <img 
-                    src={`http://localhost:5000${property.images[0].url}`} 
+                    src={`${API_BASE}${property.images[0].url}`} 
                     alt={property.title}
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
@@ -150,7 +182,7 @@ function Properties() {
                   {property.status}
                 </span>
                 <span style={{ position: 'absolute', bottom: '12px', left: '12px', background: '#4f46e5', color: 'white', padding: '4px 12px', borderRadius: '4px', fontWeight: 600 }}>
-                  {property.listingType === 'sale' ? '$' : '$'}{property.price?.toLocaleString()}{property.listingType === 'rent' ? '/mo' : ''}
+                  {property.listingType === 'sale' ? '₹' : '₹'}{property.price?.toLocaleString('en-IN')}{property.listingType === 'rent' ? '/mo' : ''}
                 </span>
               </div>
               <div style={{ padding: '16px' }}>
@@ -235,10 +267,12 @@ function Properties() {
                 <div className="form-group">
                   <label className="form-label">Price *</label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     className="form-input"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    value={formatIndianNumber(formData.price)}
+                    onChange={(e) => setFormData({ ...formData, price: getDigitsOnly(e.target.value) })}
+                    placeholder="e.g. 12,34,567"
                     required
                   />
                 </div>
@@ -271,6 +305,17 @@ function Properties() {
                     onChange={(e) => setFormData({ ...formData, location: { ...formData.location, state: e.target.value } })}
                   />
                 </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Property Images</label>
+                <input
+                  type="file"
+                  className="form-input"
+                  multiple
+                  accept="image/*"
+                  onChange={(e) => setSelectedImages(Array.from(e.target.files || []))}
+                />
+                <small style={{ color: '#64748b' }}>You can upload up to 10 images.</small>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div className="form-group">

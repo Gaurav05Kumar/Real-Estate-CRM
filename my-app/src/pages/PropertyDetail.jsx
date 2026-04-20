@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 function PropertyDetail() {
   const { id } = useParams();
   const { API_URL } = useContext(AuthContext);
+  const API_BASE = API_URL.replace('/api', '');
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -60,7 +61,7 @@ function PropertyDetail() {
             {property.status}
           </span>
           <span style={{ fontSize: '24px', fontWeight: '700', color: '#4f46e5' }}>
-            ${property.price?.toLocaleString()}{property.listingType === 'rent' ? '/mo' : ''}
+            ₹{property.price?.toLocaleString('en-IN')}{property.listingType === 'rent' ? '/mo' : ''}
           </span>
         </div>
       </div>
@@ -74,7 +75,7 @@ function PropertyDetail() {
                 property.images.map((img, index) => (
                   <div key={index} style={{ height: '150px', borderRadius: '8px', overflow: 'hidden' }}>
                     <img 
-                      src={`http://localhost:5000${img.url}`} 
+                      src={`${API_BASE}${img.url}`} 
                       alt={`Property ${index + 1}`}
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
