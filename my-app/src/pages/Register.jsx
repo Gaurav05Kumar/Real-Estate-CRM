@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../App";
 
 const Register = () => {
   // Removed name field
@@ -11,6 +12,7 @@ const Register = () => {
   const [success, setSuccess] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { API_URL } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -22,12 +24,20 @@ const Register = () => {
       return;
     }
     try {
-      const res = await axios.post("/api/auth/register", data);
-         console.log(res.data);
+      const payload = {
+        email,
+        password,
+      };
+      const res = await axios.post(`${API_URL}/auth/register`, payload);
+      console.log(res.data);
       setSuccess("Registration successful! Please login.");
       setTimeout(() => navigate("/login"), 1500);
     } catch (err) {
-      setError(err.response?.data?.message || "Registration failed");
+      if (!err.response) {
+        setError("Cannot reach server. Please ensure backend is running.");
+      } else {
+        setError(err.response?.data?.message || "Registration failed");
+      }
     }
   };
 
